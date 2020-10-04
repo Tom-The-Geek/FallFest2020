@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "ttg_fallfest",
+  "version": "${version}",
+  "name": "FallFest 2020",
+  "description": "My FallFest entry",
+  "authors": [
+    "Tom_The_Geek"
+  ],
+  "contributors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/ttg_fallfest/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "me.geek.tom.fallfest.FallFest"
+    ],
+    "client": [],
+    "server": []
+  },
+  "mixins": [
+    "ttg_fallfest.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.10.0",
+    "fabric": "*"
+  }
+}
