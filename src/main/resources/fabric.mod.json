@@ -16,8 +16,14 @@
     "main": [
       "me.geek.tom.fallfest.FallFest"
     ],
-    "client": [],
-    "server": []
+    "client": [
+      "me.geek.tom.fallfest.FallFestClient"
+    ],
+    "server": [],
+
+    "cardinal-components-entity": [
+      "me.geek.tom.fallfest.component.ModComponents"
+    ]
   },
   "mixins": [
     "ttg_fallfest.mixins.json"
@@ -26,5 +32,10 @@
   "depends": {
     "fabricloader": ">=0.10.0",
     "fabric": "*"
+  },
+  "custom": {
+    "cardinal-components": [
+      "ttg_fallfest:spawner_pos"
+    ]
   }
 }

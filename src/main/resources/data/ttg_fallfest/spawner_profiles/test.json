@@ -1,0 +1,19 @@
+{
+  "waves": [
+    {
+      "entities": [
+        "minecraft:creeper"
+      ],
+      "baseMobCount": 5,
+      "baseMobCountVariation": 2
+    },
+    {
+      "entities": [
+        "minecraft:creeper",
+        "minecraft:zombie"
+      ],
+      "baseMobCount": 7,
+      "baseMobCountVariation": 2
+    }
+  ]
+}

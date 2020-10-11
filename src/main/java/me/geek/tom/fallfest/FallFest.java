@@ -1,12 +1,17 @@
 package me.geek.tom.fallfest;
 
 import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import me.geek.tom.fallfest.dump.DumpCommand;
 import me.geek.tom.fallfest.mixin.StructuresConfigAccessor;
+import me.geek.tom.fallfest.resources.SpawnerProfileManager;
 import me.geek.tom.fallfest.structure.DungeonStructure;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.structure.v1.FabricStructureBuilder;
+import net.minecraft.resource.ResourceType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
@@ -34,6 +39,7 @@ import java.util.function.Supplier;
 public class FallFest implements ModInitializer {
 
     public static final Logger LOGGER = LogManager.getLogger();
+    public static final Gson GSON = new GsonBuilder().disableHtmlEscaping().setPrettyPrinting().create();
 
     public static final String MOD_ID = "ttg_fallfest";
     public static final String MOD_NAME = "FallFest 2020";
@@ -43,6 +49,10 @@ public class FallFest implements ModInitializer {
             DUNGEON_STRUCTURE.configure(DefaultFeatureConfig.INSTANCE);
 
     public static final Map<StructureFeature<?>, StructureConfig> MOD_STRUCTURES = new HashMap<>();
+
+    public static Identifier modIdentifier(String path) {
+        return new Identifier(MOD_ID, path);
+    }
 
     @Override
     public void onInitialize() {
@@ -54,7 +64,7 @@ public class FallFest implements ModInitializer {
 //        );
 
         LOGGER.info(FlatChunkGenerator.CODEC);
-        FabricStructureBuilder.create(new Identifier(MOD_ID, "test"), DUNGEON_STRUCTURE)
+        FabricStructureBuilder.create(modIdentifier("dungeon"), DUNGEON_STRUCTURE)
                 .step(GenerationStep.Feature.UNDERGROUND_STRUCTURES)
                 .defaultConfig(new StructureConfig(1, 0, 433729))
                 .superflatFeature(DefaultFeatureConfig.INSTANCE)
@@ -65,11 +75,13 @@ public class FallFest implements ModInitializer {
 
         MutableRegistry<ConfiguredStructureFeature<?, ?>> registry = (MutableRegistry<ConfiguredStructureFeature<?, ?>>) BuiltinRegistries.CONFIGURED_STRUCTURE_FEATURE;
 
-        Registry.register(registry, new Identifier(MOD_ID, "dungeon"), CONFIGURED_DUNGEON);
+        Registry.register(registry, FallFest.modIdentifier("dungeon"), CONFIGURED_DUNGEON);
 
         ServerWorldEvents.LOAD.register(this::addStructures);
         Registration.init(); // Trigger classload that runs the static initializer and registers everything.
         DumpCommand.init();
+
+        ResourceManagerHelper.get(ResourceType.SERVER_DATA).registerReloadListener(new SpawnerProfileManager());
     }
 
     private void addStructures(MinecraftServer server, ServerWorld world) {

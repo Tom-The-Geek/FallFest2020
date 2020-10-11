@@ -38,7 +38,7 @@ public class DungeonStructure extends StructureFeature<DefaultFeatureConfig> {
             Biome.Category.NONE
     );
 
-    private static final Identifier START_POOL = new Identifier(FallFest.MOD_ID, "dungeon_start");
+    private static final Identifier START_POOL = FallFest.modIdentifier("dungeon_start");
     protected final double probability;
 
     public DungeonStructure(double probability) {
