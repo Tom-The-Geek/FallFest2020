@@ -1,0 +1,15 @@
+{
+  "name": "ttg_fallfest:dungeon_tunnel_down",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "location": "ttg_fallfest:dungeon_tunnel_down",
+        "processors": "minecraft:empty",
+        "projection": "rigid",
+        "element_type": "minecraft:single_pool_element"
+      }
+    }
+  ]
+}

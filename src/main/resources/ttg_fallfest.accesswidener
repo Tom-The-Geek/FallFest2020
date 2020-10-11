@@ -1,0 +1,8 @@
+accessWidener	v1	named
+
+# These two are taken from CorgiTaco's 1.16.2 cheatsheet: https://gist.github.com/CorgiTaco/3eb2d9128a1ec41bd5d5846d17994851
+mutable field net/minecraft/world/biome/GenerationSettings features Ljava/util/List;
+accessible field net/minecraft/world/biome/GenerationSettings features Ljava/util/List;
+
+mutable field net/minecraft/world/biome/GenerationSettings structureFeatures Ljava/util/List;
+accessible field net/minecraft/world/biome/GenerationSettings structureFeatures Ljava/util/List;

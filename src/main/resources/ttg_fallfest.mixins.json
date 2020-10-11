@@ -2,7 +2,10 @@
   "required": true,
   "package": "me.geek.tom.fallfest.mixin",
   "compatibilityLevel": "JAVA_8",
-  "mixins": [],
+  "mixins": [
+    "MinecraftServerMixin",
+    "StructuresConfigAccessor"
+  ],
   "client": [],
   "server": [],
   "injectors": {

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "ttg_fallfest:block/eerie_torch"
+  }
+}

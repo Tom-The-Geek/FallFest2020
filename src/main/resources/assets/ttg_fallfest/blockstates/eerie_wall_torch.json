@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "ttg_fallfest:block/eerie_wall_torch"
+    },
+    "facing=north": {
+      "model": "ttg_fallfest:block/eerie_wall_torch",
+      "y": 270
+    },
+    "facing=south": {
+      "model": "ttg_fallfest:block/eerie_wall_torch",
+      "y": 90
+    },
+    "facing=west": {
+      "model": "ttg_fallfest:block/eerie_wall_torch",
+      "y": 180
+    }
+  }
+}

@@ -22,6 +22,7 @@
   "mixins": [
     "ttg_fallfest.mixins.json"
   ],
+  "accessWidener": "ttg_fallfest.accesswidener",
   "depends": {
     "fabricloader": ">=0.10.0",
     "fabric": "*"
