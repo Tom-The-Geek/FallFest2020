@@ -1,6 +1,5 @@
 package me.geek.tom.fallfest.component.impl;
 
-import com.sun.istack.internal.Nullable;
 import me.geek.tom.fallfest.component.SpawnerMobComponent;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtHelper;
@@ -10,7 +9,6 @@ import java.util.Objects;
 
 public class SpawnerPosComponent implements SpawnerMobComponent {
 
-    @Nullable
     private BlockPos pos;
     private boolean hasSpawner;
 
@@ -18,7 +16,7 @@ public class SpawnerPosComponent implements SpawnerMobComponent {
         this(null, false);
     }
 
-    public SpawnerPosComponent(@Nullable BlockPos pos, boolean hasSpawner) {
+    public SpawnerPosComponent(BlockPos pos, boolean hasSpawner) {
         this.pos = pos;
         this.hasSpawner = hasSpawner;
     }

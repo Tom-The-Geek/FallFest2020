@@ -5,6 +5,8 @@ import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.util.ActionResult;
@@ -25,10 +27,16 @@ public class CursedSpawnerBlock extends Block implements BlockEntityProvider {
     @SuppressWarnings("deprecation")
     @Override
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-        if (world.isClient())
-            return ActionResult.CONSUME;
+        if (hand == Hand.OFF_HAND) return ActionResult.CONSUME;
+        if (state.get(ACTIVE)) return ActionResult.CONSUME;
 
-        world.setBlockState(pos, state.with(ACTIVE, !state.get(ACTIVE)));
+        if (world.isClient()) {
+            world.playSound(pos.getX(), pos.getY(), pos.getZ(), SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.BLOCKS,
+                    1.0f, 1.0f, false);
+            return ActionResult.CONSUME;
+        }
+
+        world.setBlockState(pos, state.with(ACTIVE, true));
         BlockEntity be = world.getBlockEntity(pos);
         if (be instanceof CursedSpawnerBlockEntity) {
             return ((CursedSpawnerBlockEntity) be).onUse(state, world, pos, player, hand, hit);

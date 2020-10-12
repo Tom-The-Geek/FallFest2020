@@ -95,18 +95,18 @@ public class SpawnerProfileManager extends JsonDataLoader implements Identifiabl
                     instance -> instance.group(
                             Registry.ENTITY_TYPE.listOf().fieldOf("entities").forGetter(SpawnerWave::getEntities),
                             Codec.INT.fieldOf("baseMobCount").forGetter(SpawnerWave::getBaseMobCount),
-                            Codec.INT.fieldOf("baseMobCountVariation").forGetter(SpawnerWave::getBaseMobCountVariation)
+                            Codec.INT.fieldOf("mobCountVariation").forGetter(SpawnerWave::getMobCountVariation)
                     ).apply(instance, SpawnerWave::new)
             );
 
             private final List<EntityType<?>> entities;
             private final int baseMobCount;
-            private final int baseMobCountVariation;
+            private final int mobCountVariation;
 
-            public SpawnerWave(List<EntityType<?>> entities, int baseMobCount, int baseMobCountVariation) {
+            public SpawnerWave(List<EntityType<?>> entities, int baseMobCount, int mobCountVariation) {
                 this.entities = entities;
                 this.baseMobCount = baseMobCount;
-                this.baseMobCountVariation = baseMobCountVariation;
+                this.mobCountVariation = mobCountVariation;
             }
 
             public List<EntityType<?>> getEntities() {
@@ -117,8 +117,8 @@ public class SpawnerProfileManager extends JsonDataLoader implements Identifiabl
                 return baseMobCount;
             }
 
-            public int getBaseMobCountVariation() {
-                return baseMobCountVariation;
+            public int getMobCountVariation() {
+                return mobCountVariation;
             }
 
             @Override
@@ -126,7 +126,7 @@ public class SpawnerProfileManager extends JsonDataLoader implements Identifiabl
                 return "SpawnerWave{" +
                         "entities=" + entities +
                         ", baseMobCount=" + baseMobCount +
-                        ", baseMobCountVariation=" + baseMobCountVariation +
+                        ", mobCountVariation=" + mobCountVariation +
                         '}';
             }
         }

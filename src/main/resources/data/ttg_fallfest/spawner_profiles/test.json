@@ -5,7 +5,7 @@
         "minecraft:creeper"
       ],
       "baseMobCount": 5,
-      "baseMobCountVariation": 2
+      "mobCountVariation": 2
     },
     {
       "entities": [
@@ -13,7 +13,7 @@
         "minecraft:zombie"
       ],
       "baseMobCount": 7,
-      "baseMobCountVariation": 2
+      "mobCountVariation": 2
     }
   ]
 }
