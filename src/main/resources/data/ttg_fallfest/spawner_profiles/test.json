@@ -10,9 +10,10 @@
     {
       "entities": [
         "minecraft:creeper",
-        "minecraft:zombie"
+        "minecraft:zombie",
+        "minecraft:ghast"
       ],
-      "baseMobCount": 7,
+      "baseMobCount": 9,
       "mobCountVariation": 2
     }
   ]

@@ -50,6 +50,24 @@ public class CursedSpawnerBlock extends Block implements BlockEntityProvider {
     }
 
     @Override
+    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+        super.onBreak(world, pos, state, player);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
+        if (newState.getBlock() != state.getBlock()) {
+            BlockEntity be = world.getBlockEntity(pos);
+            if (be instanceof CursedSpawnerBlockEntity) {
+                ((CursedSpawnerBlockEntity) be).getController().ifPresent(CursedSpawnerController::onRemoved);
+            }
+        } else {
+            super.onStateReplaced(state, world, pos, newState, moved);
+        }
+    }
+
+    @Override
     public BlockEntity createBlockEntity(BlockView world) {
         return new CursedSpawnerBlockEntity();
     }

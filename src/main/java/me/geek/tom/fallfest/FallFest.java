@@ -58,12 +58,6 @@ public class FallFest implements ModInitializer {
     public void onInitialize() {
         log(Level.INFO, "Initializing");
 
-//        RegistryIdDumper.dumpRegistry(
-//                FabricLoader.getInstance().getGameDir().resolve("registries").toFile(),
-//                BuiltinRegistries.STRUCTURE_POOL
-//        );
-
-        LOGGER.info(FlatChunkGenerator.CODEC);
         FabricStructureBuilder.create(modIdentifier("dungeon"), DUNGEON_STRUCTURE)
                 .step(GenerationStep.Feature.UNDERGROUND_STRUCTURES)
                 .defaultConfig(new StructureConfig(1, 0, 433729))

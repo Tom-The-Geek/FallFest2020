@@ -6,22 +6,27 @@ import me.geek.tom.fallfest.Utils;
 import me.geek.tom.fallfest.component.ModComponents;
 import me.geek.tom.fallfest.component.SpawnerMobComponent;
 import me.geek.tom.fallfest.resources.SpawnerProfileManager;
-import net.minecraft.entity.*;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.registry.Registry;
-import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.explosion.Explosion;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -36,12 +41,15 @@ public class CursedSpawnerController {
 
     private SpawnerProfileManager.SpawnerProfile profile;
     private final BlockPos spawnerPos;
-    private final World world;
+    private final Supplier<World> worldSupplier;
+    private World world;
     private final Runnable markDirty;
     private final Runnable syncClient;
 
+    private int waveMobCount;
     private List<UUID> currentWaveMobs;
 
+    private int updateTimer;
     private int timer;
 
     private Map<BlockPos, EntityType<?>> potentialSpawnLocations;
@@ -50,25 +58,38 @@ public class CursedSpawnerController {
 
     private final ServerBossBar bar;
 
-    public CursedSpawnerController(SpawnerProfileManager.SpawnerProfile profile, PlayerEntity player, BlockPos spawnerPos, World world, Runnable markDirty, Runnable syncClient) {
+    public CursedSpawnerController(SpawnerProfileManager.SpawnerProfile profile, PlayerEntity player,
+                                   BlockPos spawnerPos, World world, Supplier<World> worldSupplier,
+                                   Runnable markDirty, Runnable syncClient) {
         this.profile = profile;
         this.spawnerPos = spawnerPos;
         this.world = world;
+        this.worldSupplier = worldSupplier;
         this.markDirty = markDirty;
         this.syncClient = syncClient;
 
         this.currentWave = 0;
         this.timer = 0;
+        this.updateTimer = 0;
 
         this.potentialSpawnLocations = new HashMap<>();
         this.currentState = WaveState.CHARGING;
         this.currentWaveMobs = new ArrayList<>();
         bar = new ServerBossBar(new LiteralText("Cursed Spawner"), BossBar.Color.GREEN, BossBar.Style.PROGRESS);
+        updateBarText();
         bar.setPercent(0.0f);
-        bar.addPlayer(((ServerPlayerEntity) player));
+        if (player != null)
+            bar.addPlayer(((ServerPlayerEntity) player));
     }
 
     public void tick() {
+        World world = getWorld();
+        if (world == null || world.isClient()) return;
+        updateTimer %= 20;
+        if (updateTimer == 0) {
+            updateBarPlayers();
+        }
+
         switch (this.currentState) {
             case CHARGING:
                 tickCharging();
@@ -113,6 +134,9 @@ public class CursedSpawnerController {
                 break;
         }
 
+        this.currentState = state;
+        this.updateBarText();
+
         markDirty.run();
         syncClient.run();
     }
@@ -126,33 +150,42 @@ public class CursedSpawnerController {
     }
 
     private List<UUID> spawnMobs() {
+        World world = getWorld();
         List<UUID> uuids = new ArrayList<>();
         for (Map.Entry<BlockPos, EntityType<?>> entry : this.potentialSpawnLocations.entrySet()) {
             BlockPos pos = entry.getKey();
-            if (canSpawnEntity(entry.getValue(), this.world, pos)) {
+            if (canSpawnEntity(entry.getValue(), world, pos)) {
 
-                Entity entity = entry.getValue().create(this.world);
+                Entity entity = entry.getValue().create(world);
                 assert entity != null;
 
                 entity.updatePositionAndAngles(pos.getX() + 0.5f, pos.getY() + 0.5f, pos.getZ() + 0.5f,
                         entity.yaw, entity.pitch);
-                this.world.spawnEntity(entity);
+                world.spawnEntity(entity);
                 uuids.add(entity.getUuid());
 
                 SpawnerMobComponent spawnerMobComponent = ModComponents.SPAWNER_MOB.get(entity);
                 spawnerMobComponent.setPos(this.spawnerPos);
                 spawnerMobComponent.setHasSpawner(true);
+                ModComponents.SPAWNER_MOB.sync(entity);
             } else {
                 // TODO: Implement retry logic when mobs cannot be spawned.
             }
         }
+        this.waveMobCount = uuids.size();
         return uuids;
     }
 
     private void updateBarText() {
-        bar.setName(new LiteralText("Cursed Spawner - "
-                + StringUtils.capitalize(this.currentState.name().toLowerCase())
-                + " - Wave " + currentWave + "/" + this.profile.getWaves().size()));
+        if (this.currentState == WaveState.IN_PROGRESS) {
+            bar.setName(new TranslatableText("cursedspawner.bar.message.inprogress",
+                    String.valueOf(this.currentWaveMobs.size()), String.valueOf(this.waveMobCount),
+                    String.valueOf(currentWave), String.valueOf(this.profile.getWaves().size())));
+        } else {
+            bar.setName(new TranslatableText("cursedspawner.bar.message",
+                    StringUtils.capitalize(this.currentState.name().toLowerCase()),
+                    String.valueOf(currentWave + 1), String.valueOf(this.profile.getWaves().size())));
+        }
     }
 
     private void beginCharging() {
@@ -160,14 +193,15 @@ public class CursedSpawnerController {
     }
 
     private void beginSpawning() {
+        World world = getWorld();
         SpawnerProfileManager.SpawnerProfile.SpawnerWave currentWave = this.profile.getWaves().get(this.currentWave);
         Map<BlockPos, EntityType<?>> spawnPositions = findValidSpawnPositions(currentWave);
         List<BlockPos> locations = new ArrayList<>(spawnPositions.keySet());
         int amount = Utils.rand(world.getRandom(), currentWave.getBaseMobCount(), currentWave.getMobCountVariation());
-        Collections.shuffle(locations, this.world.random);
+        Collections.shuffle(locations, world.random);
         List<BlockPos> finalLocations = new ArrayList<>();
-        for (int i = 0; i < amount; i++) {
-            finalLocations.add(locations.remove(this.world.random.nextInt(locations.size())));
+        for (int i = 0; i < Math.min(amount, locations.size()); i++) {
+            finalLocations.add(locations.remove(world.random.nextInt(locations.size())));
         }
         potentialSpawnLocations.clear();
         for (BlockPos pos : finalLocations) {
@@ -178,6 +212,7 @@ public class CursedSpawnerController {
     }
 
     private Map<BlockPos, EntityType<?>> findValidSpawnPositions(SpawnerProfileManager.SpawnerProfile.SpawnerWave spawnerWave) {
+        World world = getWorld();
         Map<BlockPos, EntityType<?>> ret = new HashMap<>();
         Random rand = world.random;
         for (int x = spawnerPos.getX() - SPAWN_RADIUS; x <= spawnerPos.getX() + SPAWN_RADIUS; x++) {
@@ -196,8 +231,7 @@ public class CursedSpawnerController {
     }
 
     private static boolean canSpawnEntity(EntityType<?> entityType, World world, BlockPos pos) {
-        return world.isSpaceEmpty(entityType.createSimpleBoundingBox(pos.getX(), pos.getY(), pos.getZ()))
-                && SpawnRestriction.canSpawn(entityType, (ServerWorldAccess) world, SpawnReason.SPAWNER, pos, world.getRandom());
+        return world.isSpaceEmpty(entityType.createSimpleBoundingBox(pos.getX(), pos.getY(), pos.getZ()));
     }
 
     public CompoundTag toTag(CompoundTag tag) {
@@ -208,6 +242,7 @@ public class CursedSpawnerController {
         this.currentWaveMobs.stream().map(NbtHelper::fromUuid).forEach(mobs::add);
 
         tag.put("Profile", profileTag);
+        tag.putInt("WaveMobCount", this.waveMobCount);
         tag.put("WaveMobs", mobs);
         tag.putInt("Timer", timer);
         tag.put("PotentialSpawnLocations", storeMap(this.potentialSpawnLocations));
@@ -223,6 +258,9 @@ public class CursedSpawnerController {
             this.profile = SpawnerProfileManager.SpawnerProfile.CODEC.decode(new Dynamic<>(nbtOps, tag.getCompound("Profile")))
                     .getOrThrow(false, System.out::println)
                     .getFirst();
+        }
+        if (tag.contains("WaveMobCount")) {
+            this.waveMobCount = tag.getInt("WaveMobCount");
         }
         if (tag.contains("WaveMobs")) {
             this.currentWaveMobs = tag.getList("WaveMobs", 11).stream()
@@ -267,6 +305,7 @@ public class CursedSpawnerController {
         UUID uuid = entity.getUuid();
         if (this.currentWaveMobs.contains(uuid)) {
             this.currentWaveMobs.remove(uuid);
+            updateBarText();
 
             if (this.currentWaveMobs.size() == 0) {
                 startNextWaveOrFinish();
@@ -275,7 +314,7 @@ public class CursedSpawnerController {
     }
 
     private void startNextWaveOrFinish() {
-        if (currentWave <= profile.getWaves().size()) {
+        if (currentWave < profile.getWaves().size() - 1) {
             currentWave++;
             this.updateState(WaveState.CHARGING);
         } else {
@@ -284,10 +323,38 @@ public class CursedSpawnerController {
     }
 
     private void endSpawner() {
-        this.world.createExplosion(null,
+        World world = getWorld();
+        world.createExplosion(null,
                 this.spawnerPos.getX(), this.spawnerPos.getY(), this.spawnerPos.getZ(),
                 5.0f, Explosion.DestructionType.NONE);
-        this.world.setBlockState(this.spawnerPos, this.world.getBlockState(this.spawnerPos).with(CursedSpawnerBlock.ACTIVE, false));
+        world.setBlockState(this.spawnerPos, world.getBlockState(this.spawnerPos).with(CursedSpawnerBlock.ACTIVE, false));
+        this.bar.clearPlayers();
+        BlockEntity be = world.getBlockEntity(this.spawnerPos);
+        if (be instanceof CursedSpawnerBlockEntity) {
+            ((CursedSpawnerBlockEntity) be).spawnerComplete();
+        }
+    }
+
+    public void updateBarPlayers() {
+        World world = getWorld();
+        BlockPos start = this.spawnerPos.add(-64, -this.spawnerPos.getY(), -64);
+        BlockPos end = this.spawnerPos.add(64, 255 - this.spawnerPos.getY(), 64);
+        this.bar.clearPlayers();
+        for (PlayerEntity player : world.getEntitiesByType(EntityType.PLAYER, new Box(start, end), __ -> true)) {
+            this.bar.addPlayer(((ServerPlayerEntity) player));
+        }
+    }
+
+    // Retry every time until the world is available. I don't like this code either.
+    private World getWorld() {
+        if (world == null) {
+            world = worldSupplier.get();
+        }
+        return world;
+    }
+
+    public void onRemoved() {
+        this.bar.clearPlayers();
     }
 
     public enum WaveState {

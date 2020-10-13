@@ -28,7 +28,7 @@ public class SpawnerPosComponent implements SpawnerMobComponent {
 
     @Override
     public boolean hasSpawner() {
-        return false;
+        return hasSpawner;
     }
 
     @Override
@@ -57,13 +57,15 @@ public class SpawnerPosComponent implements SpawnerMobComponent {
 
     @Override
     public void readFromNbt(CompoundTag compoundTag) {
-        this.pos = NbtHelper.toBlockPos(compoundTag.getCompound("DungeonSpawnerPos"));
+        if (compoundTag.contains("DungeonSpawnerPos"))
+            this.pos = NbtHelper.toBlockPos(compoundTag.getCompound("DungeonSpawnerPos"));
         this.hasSpawner = compoundTag.getBoolean("HasSpawner");
     }
 
     @Override
     public void writeToNbt(CompoundTag compoundTag) {
-        compoundTag.put("DungeonSpawnerPos", NbtHelper.fromBlockPos(this.pos));
+        if (this.pos != null)
+            compoundTag.put("DungeonSpawnerPos", NbtHelper.fromBlockPos(this.pos));
         compoundTag.putBoolean("HasSpawner", this.hasSpawner);
     }
 }

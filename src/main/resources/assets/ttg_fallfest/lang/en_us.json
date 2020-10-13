@@ -1,4 +1,6 @@
 {
   "block.ttg_fallfest.eerie_torch": "Eerie Torch",
-  "block.ttg_fallfest.eerie_wall_torch": "Eerie Wall Torch"
+  "block.ttg_fallfest.eerie_wall_torch": "Eerie Wall Torch",
+  "cursedspawner.bar.message": "Cursed Spawner - %s - Wave %s/%s",
+  "cursedspawner.bar.message.inprogress": "Cursed Spawner - %s/%s Remaining - Wave %s/%s"
 }

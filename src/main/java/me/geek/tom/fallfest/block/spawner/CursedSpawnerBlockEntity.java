@@ -10,14 +10,15 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.LiteralText;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
+import net.minecraft.util.*;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.World;
 
-public class CursedSpawnerBlockEntity extends BlockEntity implements BlockEntityClientSerializable {
+import java.util.Optional;
+
+public class CursedSpawnerBlockEntity extends BlockEntity implements Tickable, BlockEntityClientSerializable {
     private Identifier spawnerProfile;
 
     private CursedSpawnerController controller;
@@ -40,8 +41,13 @@ public class CursedSpawnerBlockEntity extends BlockEntity implements BlockEntity
         if (tag.contains("Profile"))
             spawnerProfile = new Identifier(tag.getString("Profile"));
 
-        if (tag.contains("Controller") && controller != null) {
-            controller.fromTag(tag.getCompound("Controller"));
+        if (tag.contains("Controller")) {
+            if (controller == null) {
+                createController(null);
+                if (controller != null) {
+                    controller.fromTag(tag.getCompound("Controller"));
+                }
+            }
         }
     }
 
@@ -57,18 +63,33 @@ public class CursedSpawnerBlockEntity extends BlockEntity implements BlockEntity
     }
 
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-        if (state.get(CursedSpawnerBlock.ACTIVE)) {
-            SpawnerProfileManager.SpawnerProfile profile = SpawnerProfileManager.getProfiles().get(this.spawnerProfile);
-            FallFest.LOGGER.info(profile);
-            if (profile == null) {
-                player.sendMessage(new LiteralText("No profile found: " + spawnerProfile), false);
+        if (!state.get(CursedSpawnerBlock.ACTIVE)) {
+            if (world.getDifficulty() == Difficulty.PEACEFUL) {
+                player.sendMessage(new LiteralText("World is peaceful, you cannot start the spawner!")
+                        .styled(s -> s.withColor(Formatting.RED)), false);
                 return ActionResult.CONSUME;
             }
-            controller = new CursedSpawnerController(profile, player, this.pos, this.world, this::markDirty, this::sync);
+
+            createController(player);
             markDirty();
+            sync();
         }
 
         return ActionResult.SUCCESS;
+    }
+
+    private void createController(PlayerEntity player) {
+        SpawnerProfileManager.SpawnerProfile profile = SpawnerProfileManager.getProfiles().get(this.spawnerProfile);
+        FallFest.LOGGER.info(profile);
+        if (profile == null) {
+            if (player != null)
+                player.sendMessage(new LiteralText("No profile found: " + spawnerProfile), false);
+            else
+                FallFest.LOGGER.warn("Failed to locate profile: " + spawnerProfile);
+            return;
+        }
+
+        controller = new CursedSpawnerController(profile, player, this.pos, this.world, () -> this.world, this::markDirty, this::sync);
     }
 
     @Override
@@ -84,5 +105,21 @@ public class CursedSpawnerBlockEntity extends BlockEntity implements BlockEntity
     public void onEntityDie(LivingEntity entity) {
         if (this.controller != null)
             this.controller.onEntityDie(entity);
+    }
+
+    @Override
+    public void tick() {
+        if (this.controller != null)
+            this.controller.tick();
+    }
+
+    public void spawnerComplete() {
+        this.controller = null;
+        markDirty();
+        sync();
+    }
+
+    public Optional<CursedSpawnerController> getController() {
+        return Optional.ofNullable(this.controller);
     }
 }
