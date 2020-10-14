@@ -3,7 +3,7 @@
   "fallback": "minecraft:empty",
   "elements": [
     {
-      "weight": 1,
+      "weight": 30,
       "element": {
         "location": "ttg_fallfest:dungeon_path_straight",
         "processors": "minecraft:empty",
@@ -12,7 +12,7 @@
       }
     },
     {
-      "weight": 1,
+      "weight": 25,
       "element": {
         "location": "ttg_fallfest:dungeon_path_end",
         "processors": "minecraft:empty",
@@ -21,7 +21,7 @@
       }
     },
     {
-      "weight": 1,
+      "weight": 10,
       "element": {
         "location": "ttg_fallfest:dungeon_path_left",
         "processors": "minecraft:empty",
@@ -30,7 +30,7 @@
       }
     },
     {
-      "weight": 1,
+      "weight": 10,
       "element": {
         "location": "ttg_fallfest:dungeon_path_right",
         "processors": "minecraft:empty",
@@ -39,9 +39,18 @@
       }
     },
     {
-      "weight": 1,
+      "weight": 20,
       "element": {
         "location": "ttg_fallfest:dungeon_path_junction_t",
+        "processors": "minecraft:empty",
+        "projection": "rigid",
+        "element_type": "minecraft:single_pool_element"
+      }
+    },
+    {
+      "weight": 30,
+      "element": {
+        "location": "ttg_fallfest:spawner_room",
         "processors": "minecraft:empty",
         "projection": "rigid",
         "element_type": "minecraft:single_pool_element"

@@ -30,11 +30,7 @@ public class CursedSpawnerBlock extends Block implements BlockEntityProvider {
         if (hand == Hand.OFF_HAND) return ActionResult.CONSUME;
         if (state.get(ACTIVE)) return ActionResult.CONSUME;
 
-        if (world.isClient()) {
-            world.playSound(pos.getX(), pos.getY(), pos.getZ(), SoundEvents.BLOCK_BEACON_ACTIVATE, SoundCategory.BLOCKS,
-                    1.0f, 1.0f, false);
-            return ActionResult.CONSUME;
-        }
+        if (world.isClient()) return ActionResult.CONSUME;
 
         world.setBlockState(pos, state.with(ACTIVE, true));
         BlockEntity be = world.getBlockEntity(pos);

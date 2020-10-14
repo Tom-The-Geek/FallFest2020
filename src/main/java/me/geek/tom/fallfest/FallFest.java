@@ -50,6 +50,8 @@ public class FallFest implements ModInitializer {
 
     public static final Map<StructureFeature<?>, StructureConfig> MOD_STRUCTURES = new HashMap<>();
 
+    public static final Identifier SPAWNER_EFFECT_PACKET_ID = modIdentifier("spawner_effect");
+
     public static Identifier modIdentifier(String path) {
         return new Identifier(MOD_ID, path);
     }

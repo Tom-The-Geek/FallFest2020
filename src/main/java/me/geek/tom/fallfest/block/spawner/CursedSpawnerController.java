@@ -2,27 +2,39 @@ package me.geek.tom.fallfest.block.spawner;
 
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Dynamic;
+import io.netty.buffer.Unpooled;
+import me.geek.tom.fallfest.FallFest;
 import me.geek.tom.fallfest.Utils;
 import me.geek.tom.fallfest.component.ModComponents;
 import me.geek.tom.fallfest.component.SpawnerMobComponent;
 import me.geek.tom.fallfest.resources.SpawnerProfileManager;
+import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
+import net.fabricmc.fabric.api.server.PlayerStream;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.loot.LootTable;
+import net.minecraft.loot.context.LootContext;
+import net.minecraft.loot.context.LootContextParameters;
+import net.minecraft.loot.context.LootContextTypes;
 import net.minecraft.nbt.*;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
-import net.minecraft.world.explosion.Explosion;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
@@ -35,8 +47,8 @@ import java.util.stream.Collectors;
 public class CursedSpawnerController {
 
     // TODO: Move these to be data-driven too.
-    private static final int WAVE_CHARGE_TIME = 100;
-    private static final int WAVE_SPAWN_TIME = 60;
+    private static final int WAVE_CHARGE_TIME = 60;
+    private static final int WAVE_SPAWN_TIME = 20;
     private static final int SPAWN_RADIUS = 4;
 
     private SpawnerProfileManager.SpawnerProfile profile;
@@ -80,6 +92,7 @@ public class CursedSpawnerController {
         bar.setPercent(0.0f);
         if (player != null)
             bar.addPlayer(((ServerPlayerEntity) player));
+        this.sendEffect(0, this.spawnerPos);
     }
 
     public void tick() {
@@ -159,7 +172,7 @@ public class CursedSpawnerController {
                 Entity entity = entry.getValue().create(world);
                 assert entity != null;
 
-                entity.updatePositionAndAngles(pos.getX() + 0.5f, pos.getY() + 0.5f, pos.getZ() + 0.5f,
+                entity.updatePositionAndAngles(pos.getX() + 0.5f, pos.getY(), pos.getZ() + 0.5f,
                         entity.yaw, entity.pitch);
                 world.spawnEntity(entity);
                 uuids.add(entity.getUuid());
@@ -168,6 +181,8 @@ public class CursedSpawnerController {
                 spawnerMobComponent.setPos(this.spawnerPos);
                 spawnerMobComponent.setHasSpawner(true);
                 ModComponents.SPAWNER_MOB.sync(entity);
+
+                sendEffect(2, pos);
             } else {
                 // TODO: Implement retry logic when mobs cannot be spawned.
             }
@@ -189,7 +204,18 @@ public class CursedSpawnerController {
     }
 
     private void beginCharging() {
+        sendEffect(0, this.spawnerPos);
+    }
 
+    private void sendEffect(int type, BlockPos pos) {
+        World world = this.getWorld();
+        if (world == null) return;
+
+        PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
+        buf.writeBlockPos(pos);
+        buf.writeInt(type);
+        PlayerStream.watching(world, this.spawnerPos).forEach(player ->
+                ServerSidePacketRegistry.INSTANCE.sendToPlayer(player, FallFest.SPAWNER_EFFECT_PACKET_ID, buf));
     }
 
     private void beginSpawning() {
@@ -197,7 +223,7 @@ public class CursedSpawnerController {
         SpawnerProfileManager.SpawnerProfile.SpawnerWave currentWave = this.profile.getWaves().get(this.currentWave);
         Map<BlockPos, EntityType<?>> spawnPositions = findValidSpawnPositions(currentWave);
         List<BlockPos> locations = new ArrayList<>(spawnPositions.keySet());
-        int amount = Utils.rand(world.getRandom(), currentWave.getBaseMobCount(), currentWave.getMobCountVariation());
+        int amount = Utils.rand(world.getRandom(), currentWave.getMinMobCount(), currentWave.getMaxMobCount());
         Collections.shuffle(locations, world.random);
         List<BlockPos> finalLocations = new ArrayList<>();
         for (int i = 0; i < Math.min(amount, locations.size()); i++) {
@@ -209,6 +235,7 @@ public class CursedSpawnerController {
         }
         markDirty.run();
         syncClient.run();
+        sendEffect(1, this.spawnerPos);
     }
 
     private Map<BlockPos, EntityType<?>> findValidSpawnPositions(SpawnerProfileManager.SpawnerProfile.SpawnerWave spawnerWave) {
@@ -306,6 +333,7 @@ public class CursedSpawnerController {
         if (this.currentWaveMobs.contains(uuid)) {
             this.currentWaveMobs.remove(uuid);
             updateBarText();
+            bar.setPercent((float)this.currentWaveMobs.size() / this.waveMobCount);
 
             if (this.currentWaveMobs.size() == 0) {
                 startNextWaveOrFinish();
@@ -324,15 +352,25 @@ public class CursedSpawnerController {
 
     private void endSpawner() {
         World world = getWorld();
-        world.createExplosion(null,
-                this.spawnerPos.getX(), this.spawnerPos.getY(), this.spawnerPos.getZ(),
-                5.0f, Explosion.DestructionType.NONE);
+        assert world != null;
+
+        BlockEntity be = world.getBlockEntity(this.spawnerPos);
+        this.dropStack(new ItemStack(profile.getReward(), 1));
+
         world.setBlockState(this.spawnerPos, world.getBlockState(this.spawnerPos).with(CursedSpawnerBlock.ACTIVE, false));
         this.bar.clearPlayers();
-        BlockEntity be = world.getBlockEntity(this.spawnerPos);
         if (be instanceof CursedSpawnerBlockEntity) {
             ((CursedSpawnerBlockEntity) be).spawnerComplete();
         }
+        sendEffect(3, this.spawnerPos);
+    }
+
+    private void dropStack(ItemStack stack) {
+        ItemEntity itemEntity = new ItemEntity(
+                // offset by one on the y to spawn the drops above
+                this.world, this.spawnerPos.getX(), this.spawnerPos.getY() + 1, this.spawnerPos.getZ(), stack);
+        itemEntity.setToDefaultPickupDelay();
+        this.world.spawnEntity(itemEntity);
     }
 
     public void updateBarPlayers() {

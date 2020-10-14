@@ -15,23 +15,20 @@ public class Utils {
         return lst.get(rand.nextInt(lst.size()));
     }
 
-    public static int rand(Random random, int baseCount, int variation) {
-        return baseCount + (inRange(random, baseCount - variation, baseCount + variation));
+    public static int rand(Random random, int min, int max) {
+        return min + random.nextInt(max - min);
     }
 
-    private static int inRange(Random rand, int min, int max) {
-        int diff = max - min;
-        return (rand.nextInt(diff * 2) - diff);
-    }
+//    private static int inRange(Random rand, int min, int max) {
+//        int diff = max - min;
+//        return (rand.nextInt(diff * 2) - diff);
+//    }
 
     public static void handleEntityDeath(World world, LivingEntity e) {
         if (world.isClient()) return;
 
         SpawnerMobComponent component = ModComponents.SPAWNER_MOB.get(e);
         if (component.hasSpawner()) {
-//            FallFest.LOGGER.info("{} (type: {}) was killed!", e.getUuid(), e.getClass().getSimpleName());
-//            FallFest.LOGGER.info("{} (type: {}) was killed and has an associated spawner!",
-//                    e.getUuid(), e.getClass().getSimpleName());
             BlockEntity be = world.getBlockEntity(component.getSpawnerPos());
             if (be instanceof CursedSpawnerBlockEntity) {
                 ((CursedSpawnerBlockEntity) be).onEntityDie(e);
