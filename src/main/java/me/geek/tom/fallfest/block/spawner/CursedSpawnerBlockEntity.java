@@ -80,7 +80,7 @@ public class CursedSpawnerBlockEntity extends BlockEntity implements Tickable, B
 
     private void createController(PlayerEntity player) {
         SpawnerProfileManager.SpawnerProfile profile = SpawnerProfileManager.getProfiles().get(this.spawnerProfile);
-        FallFest.LOGGER.info(profile);
+//        FallFest.LOGGER.info(profile);
         if (profile == null) {
             if (player != null)
                 player.sendMessage(new LiteralText("No profile found: " + spawnerProfile), false);

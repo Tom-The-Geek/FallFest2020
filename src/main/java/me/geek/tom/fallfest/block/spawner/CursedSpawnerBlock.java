@@ -5,8 +5,6 @@ import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.util.ActionResult;
@@ -53,14 +51,13 @@ public class CursedSpawnerBlock extends Block implements BlockEntityProvider {
     @SuppressWarnings("deprecation")
     @Override
     public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-        if (newState.getBlock() != state.getBlock()) {
+        if (!state.isOf(newState.getBlock())) {
             BlockEntity be = world.getBlockEntity(pos);
             if (be instanceof CursedSpawnerBlockEntity) {
                 ((CursedSpawnerBlockEntity) be).getController().ifPresent(CursedSpawnerController::onRemoved);
             }
-        } else {
-            super.onStateReplaced(state, world, pos, newState, moved);
         }
+        super.onStateReplaced(state, world, pos, newState, moved);
     }
 
     @Override

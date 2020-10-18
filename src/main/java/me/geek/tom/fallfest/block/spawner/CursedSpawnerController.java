@@ -209,7 +209,7 @@ public class CursedSpawnerController {
 
     private void sendEffect(int type, BlockPos pos) {
         World world = this.getWorld();
-        if (world == null) return;
+        if (world == null || world.isClient()) return;
 
         PacketByteBuf buf = new PacketByteBuf(Unpooled.buffer());
         buf.writeBlockPos(pos);
