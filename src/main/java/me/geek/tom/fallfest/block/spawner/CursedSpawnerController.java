@@ -11,18 +11,11 @@ import me.geek.tom.fallfest.resources.SpawnerProfileManager;
 import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
 import net.fabricmc.fabric.api.server.PlayerStream;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.*;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.loot.LootTable;
-import net.minecraft.loot.context.LootContext;
-import net.minecraft.loot.context.LootContextParameters;
-import net.minecraft.loot.context.LootContextTypes;
 import net.minecraft.nbt.*;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -32,7 +25,6 @@ import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.StringUtils;
@@ -169,12 +161,11 @@ public class CursedSpawnerController {
             BlockPos pos = entry.getKey();
             if (canSpawnEntity(entry.getValue(), world, pos)) {
 
-                Entity entity = entry.getValue().create(world);
+                Entity entity = entry.getValue()
+                        .spawn((ServerWorld) world, null, null, null, pos, SpawnReason.SPAWNER,
+                                true, false);
                 assert entity != null;
 
-                entity.updatePositionAndAngles(pos.getX() + 0.5f, pos.getY(), pos.getZ() + 0.5f,
-                        entity.yaw, entity.pitch);
-                world.spawnEntity(entity);
                 uuids.add(entity.getUuid());
 
                 SpawnerMobComponent spawnerMobComponent = ModComponents.SPAWNER_MOB.get(entity);
