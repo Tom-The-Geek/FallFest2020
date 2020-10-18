@@ -1,4 +1,4 @@
-name: Check commit builds
+name: Add assets to release
 
 on:
   release:
