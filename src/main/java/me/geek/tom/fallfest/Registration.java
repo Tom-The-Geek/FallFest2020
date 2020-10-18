@@ -24,16 +24,13 @@ public class Registration {
     // =======================================================
     //                      Eerie torch
 
-    public static final DefaultParticleType EERIE_FLAME_PARTICLE = modRegister(Registry.PARTICLE_TYPE,
-            FabricParticleTypes.simple(), "eerie_flame");
-
     public static final TorchBlock EERIE_TORCH_BLOCK = modRegister(Registry.BLOCK,
             new EerieTorch.EerieTorchBlock(
                     FabricBlockSettings.of(Material.SUPPORTED)
                             .noCollision()
                             .breakInstantly()
                             .luminance(Registration::torchBrightness)
-                            .sounds(BlockSoundGroup.WOOD), EERIE_FLAME_PARTICLE),
+                            .sounds(BlockSoundGroup.WOOD), FallFestClient.EERIE_FLAME_PARTICLE),
             "eerie_torch");
     public static final TorchBlock EERIE_WALL_TORCH_BLOCK = modRegister(Registry.BLOCK,
             new EerieTorch.EerieWallTorchBlock(
@@ -42,7 +39,7 @@ public class Registration {
                             .breakInstantly()
                             .luminance(Registration::torchBrightness)
                             .sounds(BlockSoundGroup.WOOD)
-                            .dropsLike(EERIE_TORCH_BLOCK), EERIE_FLAME_PARTICLE),
+                            .dropsLike(EERIE_TORCH_BLOCK), FallFestClient.EERIE_FLAME_PARTICLE),
             "eerie_wall_torch");
     public static final WallStandingBlockItem EERIE_TORCH_ITEM = modRegister(Registry.ITEM,
             new WallStandingBlockItem(EERIE_TORCH_BLOCK, EERIE_WALL_TORCH_BLOCK, new FabricItemSettings().group(ItemGroup.DECORATIONS)),
@@ -64,10 +61,9 @@ public class Registration {
 
     public static void init() {
         // Trigger classload - registers stuff.
-        ParticleFactoryRegistry.getInstance().register(EERIE_FLAME_PARTICLE, FlameParticle.Factory::new);
     }
 
-    private static <T> T modRegister(Registry<? super T> reg, T object, String name) {
+    public static <T> T modRegister(Registry<? super T> reg, T object, String name) {
         return Registry.register(reg, FallFest.modIdentifier(name), object);
     }
 
