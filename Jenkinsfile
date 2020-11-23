@@ -8,13 +8,15 @@ pipeline {
   
   stages {
     stage('Notify-Build-Start') {
-      discordSend(
-        title: "${WEBHOOK_TITLE} Started",
-        successful: true,
-        result: 'ABORTED',
-        thumbnail: JENKINS_HEAD,
-        webhookURL: WEBHOOK_URL
-      )
+      steps {
+        discordSend(
+          title: "${WEBHOOK_TITLE} Started",
+          successful: true,
+          result: 'ABORTED',
+          thumbnail: JENKINS_HEAD,
+          webhookURL: WEBHOOK_URL
+        )
+      }
     }
     
     stage('Build') {
