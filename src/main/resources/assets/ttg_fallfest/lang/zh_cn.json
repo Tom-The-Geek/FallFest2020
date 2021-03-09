@@ -1,0 +1,6 @@
+{
+  "block.ttg_fallfest.eerie_torch": "怪异火把",
+  "block.ttg_fallfest.eerie_wall_torch": "怪异墙壁火把",
+  "cursedspawner.bar.message": "被诅咒的生灵 - %s - 波数 %s/%s",
+  "cursedspawner.bar.message.inprogress": "被诅咒的生灵 - %s/%s 剩余波数 %s/%s"
+}
